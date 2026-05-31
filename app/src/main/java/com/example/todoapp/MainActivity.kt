@@ -1,28 +1,25 @@
 package com.example.todoapp
 
 import android.os.Bundle
-import android.widget.Adapter
 import android.widget.Button
 import android.widget.EditText
 import android.widget.TextView
 import androidx.activity.enableEdgeToEdge
-import androidx.activity.viewModels
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import com.example.todoapp.database.AppDatabase
-import com.example.todoapp.databinding.ActivityMainBinding
 import com.example.todoapp.repository.TaskRepository
 import com.example.todoapp.viewmodel.TaskViewModel
 
 class MainActivity : AppCompatActivity() {
-    private var taskInput: EditText?=null
-    private var addTaskButton: Button?=null
-    private var tvTaskCount: TextView?=null
-    private var tvClearCompleted:TextView?=null
+
+    private var taskInput: EditText? = null
+    private var addTaskButton: Button? = null
+    private var tvTaskCount: TextView? = null
+    private var tvClearCompleted: TextView? = null
     private lateinit var rvTasks: RecyclerView
     private lateinit var taskAdapter: TaskAdapter
     private lateinit var taskViewModel: TaskViewModel
@@ -37,50 +34,53 @@ class MainActivity : AppCompatActivity() {
             insets
         }
 
+        // ── Views ──
+        taskInput        = findViewById(R.id.etTaskInput)
+        addTaskButton    = findViewById(R.id.btnAddTask)
+        tvClearCompleted = findViewById(R.id.tvClearCompleted)
+        tvTaskCount      = findViewById(R.id.tvTaskCount)
+        rvTasks          = findViewById(R.id.rvTasks)
 
-        taskInput=findViewById(R.id.etTaskInput)
-        addTaskButton=findViewById(R.id.btnAddTask)
-        tvClearCompleted=findViewById(R.id.tvClearCompleted)
-        tvTaskCount=findViewById(R.id.tvTaskCount)
-        rvTasks=findViewById(R.id.rvTasks)
-
-        val repository= TaskRepository(
+        // ── ViewModel FIRST ──
+        val repository = TaskRepository(
             (application as TaskApplication).database.taskDao()
         )
+        taskViewModel = TaskViewModel(repository)  // ← must be before taskAdapter
 
-        taskAdapter= TaskAdapter(
-            onComplete = {task->taskViewModel.toggleComplete(task)},
-            onEdit = {task->
-                val input= EditText(this).apply {
+        // ── Adapter SECOND ──
+        taskAdapter = TaskAdapter(
+            onComplete = { task -> taskViewModel.toggleComplete(task) },
+            onEdit = { task ->
+                val input = EditText(this).apply {
                     setText(task.title)
-                    setPadding(40,20,40,20)
+                    setPadding(40, 20, 40, 20)
                 }
                 AlertDialog.Builder(this)
                     .setTitle("Edit Task")
                     .setView(input)
-                    .setPositiveButton("Save"){_,_ ->
-                        taskViewModel.updateTask(task,input.text.toString())
+                    .setPositiveButton("Save") { _, _ ->
+                        taskViewModel.updateTask(task, input.text.toString())
                     }
-                    .setNegativeButton("Cancel",null)
+                    .setNegativeButton("Cancel", null)
                     .show()
             },
-            onDelete = {task->
+            onDelete = { task ->
                 AlertDialog.Builder(this)
                     .setTitle("Delete Task")
                     .setMessage("Are you sure you want to Delete \"${task.title}\"?")
-                    .setPositiveButton("Delete"){_,_ -> taskViewModel.deleteTask(task)}
-                    .setNegativeButton("Cancel",null)
+                    .setPositiveButton("Delete") { _, _ -> taskViewModel.deleteTask(task) }
+                    .setNegativeButton("Cancel", null)
                     .show()
             }
         )
 
-        rvTasks.layoutManager= LinearLayoutManager(this)
-        rvTasks.adapter= taskAdapter
+        rvTasks.layoutManager = LinearLayoutManager(this)
+        rvTasks.adapter = taskAdapter
 
-        taskViewModel= TaskViewModel(repository)
+        // ── Listeners ──
         addTaskButton?.setOnClickListener {
-            val task=taskInput?.text.toString()
-            if(task.isNotEmpty()){
+            val task = taskInput?.text.toString()
+            if (task.isNotEmpty()) {
                 taskViewModel.addTask(task)
                 taskInput?.setText("")
             }
@@ -90,9 +90,11 @@ class MainActivity : AppCompatActivity() {
             taskViewModel.clearCompleted()
         }
 
-        taskViewModel.tasks.observe(this){
-            task->taskAdapter.submitList(task)
+        // ── Observers ──
+        taskViewModel.tasks.observe(this) { tasks ->
+            taskAdapter.submitList(tasks)
         }
+
         taskViewModel.pendingCount.observe(this) { count ->
             tvTaskCount?.text = "$count task${if (count != 1) "s" else ""} pending"
         }

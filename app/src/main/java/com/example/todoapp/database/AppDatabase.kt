@@ -9,7 +9,7 @@ import com.example.todoapp.models.Task
 
 @Database(
     entities = [Task::class],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
