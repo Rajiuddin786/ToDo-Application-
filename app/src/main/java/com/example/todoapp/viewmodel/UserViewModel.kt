@@ -4,8 +4,6 @@ import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
-import com.example.todoapp.models.User
-import com.example.todoapp.repository.UserRepository
 import kotlinx.coroutines.launch
 
 class AuthViewModel(private val userRepository: UserRepository) : ViewModel() {
